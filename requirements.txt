@@ -1,9 +1,7 @@
-streamlit
+requests
 pandas
+numpy
 seaborn
 matplotlib
-numpy
-squarify
 scikit-learn
-xgboost
-joblib
+tensorflow
