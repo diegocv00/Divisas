@@ -1,0 +1,36 @@
+name: Actualizar datos de divisas
+
+on:
+  schedule:
+    - cron: '0 12 1 * *'  # Cada 1 de mes a las 12:00 UTC (~7:00 a.m. Colombia)
+  workflow_dispatch:        # Permite ejecución manual desde GitHub
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: 🚀 Ejecutar script para obtener los datos de la API fixer
+        run: api_divisas.py
+
+      - name: 🚀 Ejecutar script para predicción
+        run: divisas.py
+
+      - name: 📤 Subir cambios al repositorio
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add monedas.csv
+          git commit -m "Actualización automática de datos de divisas"
+          git push
