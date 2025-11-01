@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add monedas.csv metricas_*.txt || echo "No hay archivos para agregar"
+          git add monedas.csv resultados/ || echo "No hay archivos para agregar"
           git commit -m "📈 Actualización automática de divisas y métricas $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push
