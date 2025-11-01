@@ -21,16 +21,16 @@ jobs:
       - name: 📦 Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: 🚀 Ejecutar script para obtener los datos de la API fixer
-        run: api_divisas.py
+      - name: 🚀 Ejecutar script para obtener los datos de la API Fixer
+        run: python api_divisas.py
 
-      - name: 🚀 Ejecutar script para predicción
-        run: divisas.py
+      - name: 🤖 Ejecutar script de predicción LSTM
+        run: python divisas.py
 
       - name: 📤 Subir cambios al repositorio
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add monedas.csv
-          git commit -m "Actualización automática de datos de divisas"
+          git add monedas.csv metricas_*.txt || echo "No hay archivos para agregar"
+          git commit -m "📈 Actualización automática de divisas y métricas $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push
