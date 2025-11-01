@@ -31,7 +31,7 @@ print(datos)
 df = pd.DataFrame(datos)
 
 print(df.head())
-df.to_csv("monedas.csv", index=False, mode="a", header=False)
+df.to_csv("monedas.csv", index=False)
 
 #eliminar duplicados de csv
 df_f= pd.read_csv("monedas.csv")
