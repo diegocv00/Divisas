@@ -9,6 +9,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization,Input
 from tensorflow.keras.callbacks import EarlyStopping,ReduceLROnPlateau
 from tensorflow.keras.optimizers import AdamW
+import os
+from datetime import datetime
 
 df_divisas = pd.read_csv("Divisas/monedas.csv")
 
@@ -143,18 +145,23 @@ mae_real = mean_absolute_error(y_test_inv, pred_inv)
 rmse = np.sqrt(mean_squared_error(y_test_inv, pred_inv))
 r2 = r2_score(y_test_inv, pred_inv)
 
-print(f"RMSE: {rmse:.2f} COP")
-print(f"R²: {r2:.4f}")
-print(f"MAE real: {mae_real:.2f} COP")
+# Crear carpeta "resultados" si no existe
+os.makedirs("resultados", exist_ok=True)
 
-"""**CONCLUSIONES**
+# Generar nombre automático con fecha y hora actual
+fecha_hora = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+archivo_metricas = f"resultados/metricas_{fecha_hora}.txt"
 
-* El modelo logra errores absolutos bajos (≈ 14 COP), lo que indica buena precisión promedio en el corto plazo.
+# Guardar las métricas en el archivo
+with open(archivo_metricas, "w", encoding="utf-8") as file:
+    file.write("📊 Resultados del modelo LSTM\n")
+    file.write(f"Fecha y hora: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+    file.write(f"RMSE: {rmse:.2f} COP\n")
+    file.write(f"R²: {r2:.4f}\n")
+    file.write(f"MAE real: {mae_real:.2f} COP\n")
 
-* El R² cercano a cero sugiere que la LSTM aún no captura bien la variabilidad total del COP — predice valores cercanos al promedio o sigue la tendencia general, pero no explica gran parte de las fluctuaciones, esto sugiere añadir mas variables al modelo(otros tipo de indicadores economicos)
 
-* El RMSE y MAE son consistentes, lo que indica estabilidad del modelo (sin errores extremos grandes).
+print(f"\n Métricas guardadas automáticamente en: {archivo_metricas}")
 
 
-"""
 
