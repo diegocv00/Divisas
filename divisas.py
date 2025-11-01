@@ -12,7 +12,7 @@ from tensorflow.keras.optimizers import AdamW
 import os
 from datetime import datetime
 
-df_divisas = pd.read_csv("Divisas/monedas.csv")
+df_divisas = pd.read_csv("monedas.csv")
 
 df_divisas
 
