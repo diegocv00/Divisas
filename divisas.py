@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization, Input
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-from tensorflow.keras.optimizers import AdamW
+from tensorflow.keras.optimizers import AdamW,Adam
 import os
 from datetime import datetime
 
@@ -19,34 +19,28 @@ df_divisas = df_divisas.pivot_table(values="valor", columns="moneda", index="fec
 df_divisas["fecha"] = pd.to_datetime(df_divisas["fecha"])
 df_divisas = df_divisas.sort_values('fecha')
 
-# Escalado
-data = df_divisas[["USD", "COP"]].values
-train_size = int(len(data) * 0.8)
+df_divisas["USD_change"] = df_divisas["USD"].pct_change()
+df_divisas["COP_change"] = df_divisas["COP"].pct_change()
+df_divisas.fillna(0, inplace=True)
 
-scaler_usd = MinMaxScaler()
-scaler_cop = MinMaxScaler()
 
-# Fit solo con datos de entrenamiento
-scaler_usd.fit(data[:train_size, [0]])
-scaler_cop.fit(data[:train_size, [1]])
+scaler = MinMaxScaler()
+cols = ["USD", "COP", "USD_change", "COP_change"]
+data_escalada = scaler.fit_transform(df_divisas[cols])
 
-# Transformar todo el dataset
-usd_escalada = scaler_usd.transform(data[:, [0]])
-cop_escalada = scaler_cop.transform(data[:, [1]])
-data_escalada = np.hstack((usd_escalada, cop_escalada))
 
 # Crear secuencias para LSTM
-def crear_secuencias_con_fechas(dataset, fechas, pasos):
+def crear_secuencias_multivariadas(dataset, fechas, pasos, col_target=1):
     X, y, fechas_y = [], [], []
     for i in range(pasos, len(dataset)):
-        X.append(dataset[i - pasos:i, 0])   # USD últimos 'pasos' días
-        y.append(dataset[i, 1])             # COP actual
-        fechas_y.append(fechas[i])          # Fecha del valor de salida
+        X.append(dataset[i - pasos:i, :])      # todas las features
+        y.append(dataset[i, col_target])       # COP actual (columna 1)
+        fechas_y.append(fechas[i])             # Fecha del valor de salida
     return np.array(X), np.array(y), np.array(fechas_y)
 
-dias_previos = 30
-X, y, fechas_y = crear_secuencias_con_fechas(data_escalada, df_divisas['fecha'].values, dias_previos)
-X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+
+dias_previos = 45
+X, y, fechas_y = crear_secuencias_multivariadas(data_escalada, df_divisas['fecha'].values, dias_previos)
 
 # Dividir en train y test
 train_size = int(len(X) * 0.8)
@@ -56,44 +50,71 @@ fechas_train, fechas_test = fechas_y[:train_size], fechas_y[train_size:]
 
 # Modelo LSTM 
 modelo = Sequential([
-    Input(shape=(X_train.shape[1], 1)),
+    Input(shape=(X_train.shape[1], X_train.shape[2])),
 
-    LSTM(256, return_sequences=True),
+    LSTM(64, return_sequences=True),
+    BatchNormalization(),
+    Dropout(0.3),
+
+    LSTM(64, return_sequences=True),
+    BatchNormalization(),
+    Dropout(0.3),
+
+    LSTM(32, return_sequences=False),
     BatchNormalization(),
     Dropout(0.2),
 
-    LSTM(128, return_sequences=True),
-    BatchNormalization(),
-    Dropout(0.2),
-
-    LSTM(64, return_sequences=False),
-    BatchNormalization(),
-    Dropout(0.2),
-
-    Dense(64, activation='relu'),
+    Dense(32, activation='relu'),
     Dense(32, activation='relu'),
     Dense(1)
 ])
 
-modelo.compile(optimizer=AdamW(learning_rate=0.0007), loss='mse', metrics=['mae'])
+optimizador_adam = Adam()
+modelo.compile(optimizer=optimizador_adam, loss='mse', metrics=['mae'])
 
-early_stop = EarlyStopping(monitor='val_loss', patience=12, restore_best_weights=True)
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=8, min_lr=1e-8)
+early_stop = EarlyStopping(
+    monitor='val_loss',
+    patience=14,
+    restore_best_weights=True
+)
+
+reduce_lr = ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.5,
+    patience=14,
+    min_lr=1e-8
+)
+
 
 history = modelo.fit(
     X_train, y_train,
-    epochs=50,
+    epochs=100,
     batch_size=32,
     validation_data=(X_test, y_test),
     callbacks=[early_stop, reduce_lr],
     verbose=1
 )
 
+pred = modelo.predict(X_test)
+
 # Evaluación
 pred = modelo.predict(X_test)
 
-y_test_inv = scaler_cop.inverse_transform(y_test.reshape(-1, 1))
-pred_inv = scaler_cop.inverse_transform(pred)
+# Índice de COP dentro de las columnas escaladas
+col_cop = df_divisas.columns.get_loc("COP")  # 
+
+# Convertir los valores predichos y reales a formato completo 
+# para poder usar el scaler.inverse_transform correctamente
+dummy_pred = np.zeros((len(pred), data_escalada.shape[1]))
+dummy_true = np.zeros((len(y_test), data_escalada.shape[1]))
+
+# Insertamos las predicciones en la posición correspondiente a COP
+dummy_pred[:, col_cop] = pred.reshape(-1)
+dummy_true[:, col_cop] = y_test.reshape(-1)
+
+# Invertimos el escalado
+pred_inv = scaler.inverse_transform(dummy_pred)[:, col_cop]
+y_test_inv = scaler.inverse_transform(dummy_true)[:, col_cop]
 
 mae_real = mean_absolute_error(y_test_inv, pred_inv)
 rmse = np.sqrt(mean_squared_error(y_test_inv, pred_inv))
