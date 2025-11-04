@@ -10,7 +10,7 @@ ARCHIVO = "monedas.csv"
 datos = []
 fecha_actual = datetime.now()
 
-for i in range(31):  # últimos 31 días
+for i in range(3):  # últimos 31 días
     fecha = (fecha_actual - timedelta(days=i)).strftime('%Y-%m-%d')
     url = f"https://data.fixer.io/api/{fecha}?access_key={API_KEY}"
     querystring = {"base": "EUR", "symbols": "COP,USD"}
