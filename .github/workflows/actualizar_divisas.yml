@@ -5,6 +5,9 @@ on:
     - cron: '0 12 1 * *'  # Cada 1 de mes a las 12:00 UTC (~7:00 a.m. Colombia)
   workflow_dispatch:        # Permite ejecución manual desde GitHub
 
+permissions:
+  contents: write  # 🔑 necesario para permitir el push
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
@@ -12,6 +15,8 @@ jobs:
     steps:
       - name: 📥 Clonar repositorio
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 🧩 garantiza acceso de escritura
 
       - name: 🐍 Configurar Python
         uses: actions/setup-python@v5
@@ -32,5 +37,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add monedas.csv resultados/ || echo "No hay archivos para agregar"
-          git commit -m "📈 Actualización automática de divisas y métricas $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git commit -m "📈 Actualización automática de divisas y métricas $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
           git push
