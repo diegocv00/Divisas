@@ -9,4 +9,5 @@ Este proyecto obtiene y predice tasas de cambio usando una red LSTM y se actuali
 - Guarda resultados en:
   - `monedas.csv` → Datos actualizados  
   - `resultados/metricas_fecha.txt` → Métricas (RMSE, MAE, R²)
+  - - `resultados/predicciones_fecha.txt 
 - Se ejecuta automáticamente el día 1 de cada mes a las 7:00 a.m. Colombia
