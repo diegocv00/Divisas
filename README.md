@@ -1,8 +1,8 @@
-💱 Predicción Automática de Divisas (LSTM)
+💱 **Predicción Automática de Divisas (LSTM)**
 
 Este proyecto obtiene y predice tasas de cambio usando una red LSTM y se actualiza automáticamente cada mes con GitHub Actions.
 
-⚙️ Funcionalidad
+**⚙️ Funcionalidad**
 
 - Descarga datos desde Fixer.io (`api_divisas.py`).
 - Entrena un modelo LSTM (`divisas.py`).
