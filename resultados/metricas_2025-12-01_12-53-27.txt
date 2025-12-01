@@ -1,0 +1,6 @@
+📊 Resultados del modelo LSTM
+Fecha y hora: 2025-12-01 12:53:27
+
+RMSE: 43.90 COP
+R²: 0.1103
+MAE real: 31.86 COP
