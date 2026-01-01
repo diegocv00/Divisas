@@ -1,0 +1,6 @@
+📊 Resultados del modelo LSTM
+Fecha y hora: 2026-01-01 12:53:17
+
+RMSE: 60.20 COP
+R²: 0.0143
+MAE real: 49.97 COP
